@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WindBorne Coverage Analyzer - Filling Weather Observation Gaps</title>
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Custom Tailwind Config -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    animation: {
+                        'float': 'float 3s ease-in-out infinite',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px)' },
+                            '50%': { transform: 'translateY(-20px)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <style>
+        /* Minimal custom styles */
+        #map { width: 100%; height: 100%; }
+        .hidden { display: none !important; }
+        .loading-step.active { background-color: #f3f4f6; }
+        .loading-step.completed { background-color: #f0fdf4; }
+        #refresh-btn.loading #refresh-icon { animation: spin 1s linear infinite; }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+    </style>
+</head>
+<body class="bg-gray-50">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-purple-600 to-purple-800 rounded-xl shadow-lg p-6 sm:p-8 mb-6">
+            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white text-center mb-2">
+                🎈 WindBorne Coverage Analyzer
+            </h1>
+            <p class="text-purple-100 text-center text-sm sm:text-base lg:text-lg">
+                Visualizing how WindBorne's balloon constellation fills the 85% global weather observation gap
+            </p>
+        </header>
+
+        <!-- Controls Panel -->
+        <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Layer Controls -->
+                <div>
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Layer Controls</h3>
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" id="toggle-balloons" checked class="w-5 h-5 text-blue-600 rounded">
+                            <span class="w-4 h-4 rounded-full bg-blue-500 border-2 border-white shadow"></span>
+                            <span class="text-sm sm:text-base text-gray-700 group-hover:text-gray-900">WindBorne Balloons</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" id="toggle-paths" checked class="w-5 h-5 text-gray-600 rounded">
+                            <span class="w-4 h-4 rounded-full bg-gray-400 border-2 border-white shadow"></span>
+                            <span class="text-sm sm:text-base text-gray-700 group-hover:text-gray-900">24H Flight Paths</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" id="toggle-stations" checked class="w-5 h-5 text-red-600 rounded">
+                            <span class="w-4 h-4 rounded-full bg-red-500 border-2 border-white shadow"></span>
+                            <span class="text-sm sm:text-base text-gray-700 group-hover:text-gray-900">Weather Stations</span>
+                        </label>
+                        <label class="flex items-center gap-3 cursor-pointer group">
+                            <input type="checkbox" id="toggle-unique" checked class="w-5 h-5 text-green-600 rounded">
+                            <span class="w-4 h-4 rounded-full bg-green-500 border-2 border-white shadow"></span>
+                            <span class="text-sm sm:text-base text-gray-700 group-hover:text-gray-900">WindBorne-Only Coverage</span>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Refresh Controls -->
+                <div class="flex flex-col justify-between">
+                    <button id="refresh-btn" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2">
+                        <span id="refresh-icon" class="text-xl">🔄</span>
+                        <span class="text-sm sm:text-base">Refresh Data</span>
+                    </button>
+                    <label class="flex items-center gap-2 mt-4 text-xs sm:text-sm text-gray-600">
+                        <input type="checkbox" id="auto-refresh" checked class="w-4 h-4 text-blue-600 rounded">
+                        <span>Auto-refresh every 5 min</span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics Dashboard -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4 mb-6">
+            <div class="bg-white rounded-xl shadow-md p-3 sm:p-4 hover:shadow-lg transition-shadow">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="text-2xl sm:text-3xl">🎈</span>
+                    <div>
+                        <div class="text-xl sm:text-2xl font-bold text-gray-900" id="stat-balloons">-</div>
+                        <div class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide">Active Balloons</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-3 sm:p-4 hover:shadow-lg transition-shadow">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="text-2xl sm:text-3xl">🌊</span>
+                    <div>
+                        <div class="text-xl sm:text-2xl font-bold text-blue-600" id="stat-ocean">-%</div>
+                        <div class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide">Ocean Coverage</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-3 sm:p-4 hover:shadow-lg transition-shadow">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="text-2xl sm:text-3xl">✨</span>
+                    <div>
+                        <div class="text-xl sm:text-2xl font-bold text-green-600" id="stat-unique">-%</div>
+                        <div class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide">Unique Coverage</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-3 sm:p-4 hover:shadow-lg transition-shadow">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="text-2xl sm:text-3xl">📡</span>
+                    <div>
+                        <div class="text-xl sm:text-2xl font-bold text-gray-900" id="stat-stations">-</div>
+                        <div class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide">Weather Stations</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-3 sm:p-4 hover:shadow-lg transition-shadow">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="text-2xl sm:text-3xl">📊</span>
+                    <div>
+                        <div class="text-xl sm:text-2xl font-bold text-purple-600" id="stat-quality">-</div>
+                        <div class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide">Data Quality</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-md p-3 sm:p-4 hover:shadow-lg transition-shadow">
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="text-2xl sm:text-3xl">⏱️</span>
+                    <div>
+                        <div class="text-xl sm:text-2xl font-bold text-gray-900" id="stat-updated">-</div>
+                        <div class="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide">Last Updated</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Map Container -->
+        <div class="relative h-[400px] sm:h-[500px] md:h-[600px] lg:h-[700px] rounded-xl overflow-hidden shadow-lg mb-6">
+            <div id="map" class="w-full h-full"></div>
+        </div>
+
+        <!-- Loading Overlay - Full Screen Modal -->
+        <div id="loading" class="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-[9999] p-4 sm:p-8">
+            <!-- Gradient Background -->
+            <div class="absolute inset-0 bg-gradient-to-br from-purple-100/60 to-blue-100/60"></div>
+
+            <!-- Modal Content -->
+            <div class="relative bg-white rounded-2xl shadow-2xl p-6 sm:p-10 max-w-2xl w-full transform animate-[fadeIn_0.5s_ease-out]">
+                <!-- Floating Balloon -->
+                <div class="text-5xl sm:text-6xl lg:text-7xl text-center animate-float mb-6">🎈</div>
+
+                <!-- Title -->
+                <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 text-center mb-3">
+                    Fetching Global Balloon Constellation
+                </h2>
+                <p class="text-gray-600 text-center mb-8 text-xs sm:text-sm lg:text-base">
+                    Querying 24 hours of live WindBorne data from satellites worldwide...
+                </p>
+
+                <!-- Progress Bar -->
+                <div class="mb-8">
+                    <div class="h-2 sm:h-3 bg-gray-200 rounded-full overflow-hidden mb-3">
+                        <div id="progress-fill" class="h-full bg-gradient-to-r from-purple-600 to-blue-600 transition-all duration-500 ease-out" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between items-center text-xs sm:text-sm">
+                        <span id="progress-percentage" class="font-bold text-purple-600">0%</span>
+                        <span id="progress-status" class="text-gray-600">Initializing...</span>
+                    </div>
+                </div>
+
+                <!-- Loading Steps -->
+                <div class="space-y-2 sm:space-y-3 mb-8">
+                    <div id="step-windborne" class="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg transition-colors">
+                        <span class="text-xl sm:text-2xl">🛰️</span>
+                        <span class="flex-1 text-xs sm:text-sm lg:text-base text-gray-700">Fetching balloon positions (24 endpoints)</span>
+                        <span id="status-windborne" class="text-lg sm:text-xl">⏳</span>
+                    </div>
+                    <div id="step-stations" class="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg transition-colors">
+                        <span class="text-xl sm:text-2xl">📡</span>
+                        <span class="flex-1 text-xs sm:text-sm lg:text-base text-gray-700">Loading weather stations (13,443 stations)</span>
+                        <span id="status-stations" class="text-lg sm:text-xl">⏳</span>
+                    </div>
+                    <div id="step-analysis" class="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg transition-colors">
+                        <span class="text-xl sm:text-2xl">🔬</span>
+                        <span class="flex-1 text-xs sm:text-sm lg:text-base text-gray-700">Analyzing coverage gaps</span>
+                        <span id="status-analysis" class="text-lg sm:text-xl">⏳</span>
+                    </div>
+                    <div id="step-render" class="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg transition-colors">
+                        <span class="text-xl sm:text-2xl">🗺️</span>
+                        <span class="flex-1 text-xs sm:text-sm lg:text-base text-gray-700">Rendering interactive map</span>
+                        <span id="status-render" class="text-lg sm:text-xl">⏳</span>
+                    </div>
+                </div>
+
+                <!-- Info Box -->
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 sm:p-4 rounded-lg">
+                    <p class="font-semibold text-gray-900 mb-2 text-xs sm:text-sm lg:text-base">Why does this take time?</p>
+                    <p class="text-gray-700 text-[10px] sm:text-xs lg:text-sm leading-relaxed">
+                        We're fetching live data from 24 separate API endpoints (one per hour), processing thousands of balloon positions,
+                        and calculating coverage gaps against 13,443+ global weather stations. This ensures you see the most current,
+                        accurate visualization of WindBorne's unique value!
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Information Panel -->
+        <div class="bg-white rounded-xl shadow-md p-4 sm:p-6 lg:p-8 mb-6">
+            <h3 class="text-xl sm:text-2xl font-bold text-gray-900 mb-4 sm:mb-6">About This Visualization</h3>
+
+            <div class="space-y-4 text-gray-700 text-sm sm:text-base leading-relaxed">
+                <p>
+                    <strong class="text-gray-900">The Problem:</strong> Traditional weather stations provide only ~15% global coverage,
+                    missing critical data over oceans and remote regions where 85% of weather phenomena develop.
+                </p>
+
+                <p>
+                    <strong class="text-gray-900">WindBorne's Solution:</strong> A constellation of smart weather balloons that continuously
+                    collect atmospheric data across the entire globe, especially over oceans where traditional stations
+                    cannot reach.
+                </p>
+
+                <p><strong class="text-gray-900">What You're Seeing:</strong></p>
+
+                <ul class="space-y-2 sm:space-y-3 ml-2 sm:ml-4">
+                    <li class="flex items-start gap-2 sm:gap-3">
+                        <span class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-green-500 border-2 border-white shadow mt-1 flex-shrink-0"></span>
+                        <span class="text-xs sm:text-sm lg:text-base"><strong>Green markers:</strong> WindBorne-only coverage - areas where no weather stations exist within 200km</span>
+                    </li>
+                    <li class="flex items-start gap-2 sm:gap-3">
+                        <span class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-blue-500 border-2 border-white shadow mt-1 flex-shrink-0"></span>
+                        <span class="text-xs sm:text-sm lg:text-base"><strong>Blue markers:</strong> Current WindBorne balloon positions</span>
+                    </li>
+                    <li class="flex items-start gap-2 sm:gap-3">
+                        <span class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-red-500 border-2 border-white shadow mt-1 flex-shrink-0"></span>
+                        <span class="text-xs sm:text-sm lg:text-base"><strong>Red dots:</strong> Traditional weather stations (NOAA ISD network)</span>
+                    </li>
+                    <li class="flex items-start gap-2 sm:gap-3">
+                        <span class="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-gray-400 border-2 border-white shadow mt-1 flex-shrink-0"></span>
+                        <span class="text-xs sm:text-sm lg:text-base"><strong>Gray lines:</strong> 24-hour flight paths showing balloon trajectories</span>
+                    </li>
+                </ul>
+
+                <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-l-4 border-purple-600 p-4 sm:p-5 rounded-lg mt-4 sm:mt-6">
+                    <p class="font-semibold text-gray-900 text-xs sm:text-sm lg:text-base">
+                        Notice how WindBorne balloons concentrate over oceans and remote areas - precisely where
+                        traditional weather observation infrastructure cannot reach. This is the 85% gap they're filling.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="text-center text-gray-600 text-xs sm:text-sm pb-6">
+            <p class="mb-2">
+                Built by Ronak Malkan for WindBorne Systems |
+                Data sources: <a href="https://windbornesystems.com" target="_blank" class="text-purple-600 hover:text-purple-800 underline">WindBorne API</a> &
+                <a href="https://www.ncei.noaa.gov/products/land-based-station/integrated-surface-database" target="_blank" class="text-purple-600 hover:text-purple-800 underline">NOAA ISD</a>
+            </p>
+            <p id="error-notice" class="hidden mt-3 bg-red-50 text-red-700 px-4 py-2 rounded-lg inline-block text-xs sm:text-sm"></p>
+        </footer>
+    </div>
+
+    <!-- Main Application Script -->
+    <script src="/js/app.js"></script>
+</body>
+</html>
