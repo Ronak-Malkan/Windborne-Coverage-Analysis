@@ -108,15 +108,19 @@ function groupNearbyPositions(positions) {
   const paths = [];
   const used = new Set();
 
-  // For each position in hour 00 (most recent), try to track it backwards
-  const currentPositions = sorted.filter((p) => p.hour === 0);
+  // Find the lowest available hour (most recent data)
+  const availableHours = [...new Set(sorted.map(p => p.hour))].sort((a, b) => a - b);
+  const startHour = availableHours[0] || 0;
+
+  // For each position in the earliest available hour, try to track it through time
+  const currentPositions = sorted.filter((p) => p.hour === startHour);
 
   currentPositions.forEach((startPos) => {
     const path = [startPos];
     let lastPos = startPos;
 
-    // Try to find this balloon in previous hours
-    for (let hour = 1; hour < 24; hour++) {
+    // Try to find this balloon in subsequent hours
+    for (let hour = startHour + 1; hour < 24; hour++) {
       const hourPositions = sorted.filter((p) => p.hour === hour);
 
       // Find closest position within reasonable distance
