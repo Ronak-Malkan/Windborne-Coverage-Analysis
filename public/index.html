@@ -171,25 +171,25 @@
         </div>
 
         <!-- Loading Overlay - Full Screen Modal -->
-        <div id="loading" class="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-[9999] p-4 sm:p-8">
+        <div id="loading" class="fixed inset-0 bg-black/20 backdrop-blur-md flex items-center justify-center z-[9999] p-2 sm:p-4">
             <!-- Gradient Background -->
             <div class="absolute inset-0 bg-gradient-to-br from-purple-100/60 to-blue-100/60"></div>
 
             <!-- Modal Content -->
-            <div class="relative bg-white rounded-2xl shadow-2xl p-6 sm:p-10 max-w-2xl w-full transform animate-[fadeIn_0.5s_ease-out]">
+            <div class="relative bg-white rounded-2xl shadow-2xl p-4 sm:p-6 lg:p-10 max-w-2xl w-full max-h-[98vh] flex flex-col transform animate-[fadeIn_0.5s_ease-out]">
                 <!-- Floating Balloon -->
-                <div class="text-5xl sm:text-6xl lg:text-7xl text-center animate-float mb-6">🎈</div>
+                <div class="text-4xl sm:text-5xl lg:text-6xl text-center animate-float mb-3 sm:mb-4 lg:mb-6">🎈</div>
 
                 <!-- Title -->
-                <h2 class="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 text-center mb-3">
+                <h2 class="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 text-center mb-2 sm:mb-3">
                     Fetching Global Balloon Constellation
                 </h2>
-                <p class="text-gray-600 text-center mb-8 text-xs sm:text-sm lg:text-base">
+                <p class="text-gray-600 text-center mb-4 sm:mb-6 lg:mb-8 text-[10px] sm:text-xs lg:text-sm">
                     Querying 24 hours of live WindBorne data from satellites worldwide...
                 </p>
 
                 <!-- Progress Bar -->
-                <div class="mb-8">
+                <div class="mb-4 sm:mb-6 lg:mb-8">
                     <div class="h-2 sm:h-3 bg-gray-200 rounded-full overflow-hidden mb-3">
                         <div id="progress-fill" class="h-full bg-gradient-to-r from-purple-600 to-blue-600 transition-all duration-500 ease-out" style="width: 0%"></div>
                     </div>
@@ -200,33 +200,35 @@
                 </div>
 
                 <!-- Loading Steps -->
-                <div class="space-y-2 sm:space-y-3 mb-8">
-                    <div id="step-windborne" class="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg transition-colors">
-                        <span class="text-xl sm:text-2xl">🛰️</span>
-                        <span class="flex-1 text-xs sm:text-sm lg:text-base text-gray-700">Fetching balloon positions (24 endpoints)</span>
-                        <span id="status-windborne" class="text-lg sm:text-xl">⏳</span>
+                <div class="space-y-1 sm:space-y-2 mb-4 sm:mb-6 lg:mb-8 flex-shrink min-h-0">
+                    <div id="step-windborne" class="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-lg transition-colors">
+                        <span class="text-base sm:text-lg lg:text-xl">🛰️</span>
+                        <span class="flex-1 text-[10px] sm:text-xs lg:text-sm text-gray-700">Fetching balloon positions (24 endpoints)</span>
+                        <span id="status-windborne" class="text-sm sm:text-base lg:text-lg">⏳</span>
                     </div>
-                    <div id="step-stations" class="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg transition-colors">
-                        <span class="text-xl sm:text-2xl">📡</span>
-                        <span class="flex-1 text-xs sm:text-sm lg:text-base text-gray-700">Loading weather stations (13,443 stations)</span>
-                        <span id="status-stations" class="text-lg sm:text-xl">⏳</span>
+                    <div id="step-stations" class="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-lg transition-colors">
+                        <span class="text-base sm:text-lg lg:text-xl">📡</span>
+                        <span class="flex-1 text-[10px] sm:text-xs lg:text-sm text-gray-700">Loading weather stations (13,443 stations)</span>
+                        <span id="status-stations" class="text-sm sm:text-base lg:text-lg">⏳</span>
                     </div>
-                    <div id="step-analysis" class="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg transition-colors">
-                        <span class="text-xl sm:text-2xl">🔬</span>
-                        <span class="flex-1 text-xs sm:text-sm lg:text-base text-gray-700">Analyzing coverage gaps</span>
-                        <span id="status-analysis" class="text-lg sm:text-xl">⏳</span>
+                    <div id="step-analysis" class="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-lg transition-colors">
+                        <span class="text-base sm:text-lg lg:text-xl">🔬</span>
+                        <span class="flex-1 text-[10px] sm:text-xs lg:text-sm text-gray-700">Analyzing coverage gaps</span>
+                        <span id="status-analysis" class="text-sm sm:text-base lg:text-lg">⏳</span>
                     </div>
-                    <div id="step-render" class="flex items-center gap-3 sm:gap-4 p-2 sm:p-3 rounded-lg transition-colors">
-                        <span class="text-xl sm:text-2xl">🗺️</span>
-                        <span class="flex-1 text-xs sm:text-sm lg:text-base text-gray-700">Rendering interactive map</span>
-                        <span id="status-render" class="text-lg sm:text-xl">⏳</span>
+                    <div id="step-render" class="flex items-center gap-2 sm:gap-3 p-1.5 sm:p-2 rounded-lg transition-colors">
+                        <span class="text-base sm:text-lg lg:text-xl">🗺️</span>
+                        <span class="flex-1 text-[10px] sm:text-xs lg:text-sm text-gray-700">Rendering interactive map</span>
+                        <span id="status-render" class="text-sm sm:text-base lg:text-lg">⏳</span>
                     </div>
                 </div>
 
                 <!-- Info Box -->
-                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-3 sm:p-4 rounded-lg">
-                    <p class="font-semibold text-gray-900 mb-2 text-xs sm:text-sm lg:text-base">Why does this take time?</p>
-                    <p class="text-gray-700 text-[10px] sm:text-xs lg:text-sm leading-relaxed">
+                <div class="bg-yellow-50 border-l-4 border-yellow-400 p-2 sm:p-3 lg:p-4 rounded-lg flex-shrink-0">
+                    <p class="font-semibold text-gray-900 mb-1 sm:mb-2 text-[10px] sm:text-xs lg:text-sm">
+                        <span class="font-bold text-orange-600">⚠️ This may take 1-2 minutes</span> — Why?
+                    </p>
+                    <p class="text-gray-700 text-[9px] sm:text-[10px] lg:text-xs leading-relaxed">
                         We're fetching live data from 24 separate API endpoints (one per hour), processing thousands of balloon positions,
                         and calculating coverage gaps against 13,443+ global weather stations. This ensures you see the most current,
                         accurate visualization of WindBorne's unique value!
