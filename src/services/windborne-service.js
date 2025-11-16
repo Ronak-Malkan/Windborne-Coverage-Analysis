@@ -11,6 +11,9 @@ const WINDBORNE_BASE_URL = 'https://a.windbornesystems.com/treasure';
  * Fetch WindBorne balloon data for all 24 hours with robust error handling
  */
 async function fetchConstellationData() {
+  console.log('Fetching WindBorne constellation data from 24 endpoints...');
+  const startTime = Date.now();
+
   const hours = Array.from({ length: 24 }, (_, i) => String(i).padStart(2, '0'));
 
   const results = {
@@ -91,6 +94,9 @@ async function fetchConstellationData() {
   const uniqueBalloons = groupNearbyPositions(results.balloons);
   results.uniqueBalloonCount = uniqueBalloons.length;
   results.balloonPaths = uniqueBalloons;
+
+  const fetchTime = Date.now() - startTime;
+  console.log(`✓ Fetched ${results.balloons.length.toLocaleString()} positions in ${fetchTime}ms (${results.successCount}/${results.totalRequests} endpoints succeeded)`);
 
   return results;
 }
